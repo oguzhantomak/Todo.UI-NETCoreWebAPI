@@ -1,0 +1,92 @@
+﻿@{
+    ViewData["Title"] = "Home Page";
+}
+
+<div class="row mt-5">
+    <div class="col-3 border rounded shadow-sm pt-2 pb-2">
+        <div class="form-group">
+            <label>Yapılacak İş</label>
+            <input type="text" class="form-control" id="Name" />
+        </div>
+
+        <div class="form-group">
+        <div class="custom-control custom-checkbox mr-sm-2">
+            <input type="checkbox" class="custom-control-input" id="isComplete">
+            <label class="custom-control-label" for="isComplete">Durum</label>
+        </div>
+            </div>
+
+        <div class="form-group">
+            <input type="button" class="btn-outline-dark btn-sm float-right" value="Kaydet" id="save"/>
+        </div>
+    </div>
+    <div class="col ml-1 border rounded shadow-sm pt-2 pb-2">
+<table class="table table-hover">
+    <thead>
+        <tr>
+            <th>Id</th>
+            <th>Name</th>
+            <th>Result</th>
+            <th>Options</th>
+        </tr>
+    </thead>
+    <tbody>
+        
+    </tbody>
+</table>
+    </div>
+</div>
+
+@section Scripts{
+    <script>
+        const url = "http://localhost:5000/api/TodoItems";
+
+        $(document).ready(function (){
+
+            function List() {
+                $.getJSON(url, function (data) {
+
+                    $("table tbody tr").remove();
+                    $.each(data, function (key, value) {
+                        $("table tbody").append(`
+
+<tr>
+            <td>${value.id}</td>
+            <td>${value.name}</td>
+            <td>${value.isComplete}</td>
+            <td>
+                <button class="btn-sm btn-outline-primary btn-sm"><i class="fa fa-search"></i></button>
+                <button class="btn-sm btn-outline-warning btn-sm"><i class="fa fa-pencil"></i></button>
+                <button class="btn-sm btn-outline-danger btn-sm"><i class="fa fa-trash"></i></button>
+            </td>
+        </tr>
+
+
+
+`)
+                    });
+                })
+            }
+            List();
+
+
+            $("#save").click(function () {
+                const todoItem = new Object();
+                todoItem.name = $("#Name").val();
+
+                if ($("#isComplete").is(":checked")) {
+                    todoItem.isComplete = true;
+                }
+                else {
+                    todoItem.isComplete = false;
+                }
+                // ajax metodu kullanarak servise data ekleyebilelim.
+                console.log(todoItem);
+            })
+        })
+
+    </script>
+}
+@section css{
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+}
