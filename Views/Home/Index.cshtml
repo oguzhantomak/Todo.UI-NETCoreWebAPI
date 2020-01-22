@@ -3,63 +3,91 @@
 }
 
 <div class="row mt-5">
-    <div class="col-3 border rounded shadow-sm pt-2 pb-2">
-        <div class="form-group">
-            <label>Yapılacak İş</label>
-            <input type="text" class="form-control" id="Name" />
-        </div>
-
-        <div class="form-group">
-        <div class="custom-control custom-checkbox mr-sm-2">
-            <input type="checkbox" class="custom-control-input" id="isComplete">
-            <label class="custom-control-label" for="isComplete">Durum</label>
-        </div>
+    <div class="col-4 border rounded shadow-sm pt-2 pb-2">
+        <form id="frm">
+            <input type="hidden" id="Id" value="" />
+            <div class="form-group">
+                <label>Yapılacak İş</label>
+                <input type="text" class="form-control" id="Name" />
             </div>
 
-        <div class="form-group">
-            <input type="button" class="btn-outline-dark btn-sm float-right" value="Kaydet" id="save"/>
-        </div>
+            <div class="form-group">
+                <div class="custom-control custom-checkbox mr-sm-2">
+                    <input type="checkbox" class="custom-control-input" id="isComplete">
+                    <label class="custom-control-label" for="isComplete">Durum</label>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <input type="button" class="btn btn-outline-dark btn-sm float-right" value="Save" id="save" />
+                <input type="button" class="btn btn-outline-warning btn-sm float-right ml-1 mr-1" value="Update" id="edit" />
+                <input type="button" class="btn btn-outline-danger btn-sm float-left" value="Cancel" id="cancel" />
+            </div>
+
+        </form>
     </div>
-    <div class="col ml-1 border rounded shadow-sm pt-2 pb-2">
-<table class="table table-hover">
-    <thead>
-        <tr>
-            <th>Id</th>
-            <th>Name</th>
-            <th>Result</th>
-            <th>Options</th>
-        </tr>
-    </thead>
-    <tbody>
-        
-    </tbody>
-</table>
-    </div>
+
+
+
+<div class="col ml-1 border rounded shadow-sm pt-2 pb-2">
+    <table class="table table-hover">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Name</th>
+                <th>Result</th>
+                <th>Options</th>
+            </tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
 </div>
+    </div>
 
 @section Scripts{
-    <script>
-        const url = "http://localhost:5000/api/TodoItems";
+    <script>const url = "http://localhost:5000/api/TodoItems";
 
-        $(document).ready(function (){
+        //JavaScript enum
+        const status = {
+            EDIT: 'edit',
+            SAVE: 'save'
+        }
+        let statu = status.SAVE;
+
+        $(document).ready(function () {
 
             function List() {
                 $.getJSON(url, function (data) {
 
                     $("table tbody tr").remove();
+                    statu = status.SAVE;
                     $.each(data, function (key, value) {
+
+                        let result = "";
+                        let text = "";
+                        if (value.isComplete) {
+                            result = "success";
+                            text = "Completed !";
+                        }
+                        else {
+                            result = "danger";
+                            text = "Pending !";
+                        }
+
+
                         $("table tbody").append(`
 
 <tr>
-            <td>${value.id}</td>
-            <td>${value.name}</td>
-            <td>${value.isComplete}</td>
-            <td>
-                <button class="btn-sm btn-outline-primary btn-sm"><i class="fa fa-search"></i></button>
-                <button class="btn-sm btn-outline-warning btn-sm"><i class="fa fa-pencil"></i></button>
-                <button class="btn-sm btn-outline-danger btn-sm"><i class="fa fa-trash"></i></button>
-            </td>
-        </tr>
+                        <td>${value.id}</td>
+                        <td>${value.name}</td>
+                        <td><span class="badge badge-${result}">${text}</span></td>
+                        <td>
+                            <button data-id="${value.id}" class="btn-sm btn-outline-primary btn-sm details"><i class="fa fa-search"></i></button>
+                            <button data-id="${value.id}" class="btn-sm btn-outline-warning btn-sm edit"><i class="fa fa-pencil"></i></button>
+                            <button data-id="${value.id}" class="btn-sm btn-outline-danger btn-sm delete"><i class="fa fa-trash"></i></button>
+                        </td>
+                    </tr>
 
 
 
@@ -71,6 +99,11 @@
 
 
             $("#save").click(function () {
+
+                if (statu == status.EDIT) {
+                    alert("Lütfen güncelleme işlemini yapınız veya güncelleme işlemini iptal ediniz !");
+                    return;
+                }
                 const todoItem = new Object();
                 todoItem.name = $("#Name").val();
 
@@ -80,13 +113,120 @@
                 else {
                     todoItem.isComplete = false;
                 }
-                // ajax metodu kullanarak servise data ekleyebilelim.
+                $.ajax({
+                    url: url,
+                    dataType: "json",
+                    type: "post",
+                    data: JSON.stringify(todoItem),
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    },
+                    contentType: "application/json",
+                    success: function (response) {
+                        List();
+                    },
+                    error: function () { }
+
+
+                })
                 console.log(todoItem);
             })
-        })
 
-    </script>
+            $(document).on("click", ".delete", function () {
+                const id = $(this).data("id");
+
+                $.ajax({
+                    url: url + "/" + id,
+                    dataType: "json",
+                    type: "delete",
+                    data: JSON.stringify(id),
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    },
+                    contentType: "application/json",
+                    success: function (response) {
+                        List();
+                    },
+                    error: function () { }
+
+
+                })
+            })
+
+
+            $(document).on("click", ".edit", function () {
+                statu = status.EDIT;
+                const id = $(this).data("id");
+                $("#Id").val(id);
+
+                $.ajax({
+                    url: url + "/" + id,
+                    dataType: "json",
+                    type: "get",
+                    data: JSON.stringify(id),
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    },
+                    contentType: "application/json",
+                    success: function (response) {
+                        $("#Name").val(response.name);
+                        $("#isComplete").prop("checked", response.isComplete);
+
+                    },
+                    error: function () { }
+
+
+                })
+            })
+
+            $("#cancel").click(function () {
+                statu = status.SAVE;
+                $("#frm")[0].reset();
+            })
+
+            $("#edit").click(function () {
+
+                if (statu == status.SAVE) {
+                    alert("Lütfen ekleme işlemini yapınız veya ekleme işlemini iptal ediniz !");
+                    return;
+                }
+                const todoItem = new Object();
+                todoItem.name = $("#Name").val();
+                todoItem.Id= $("#Id").val();
+
+                if ($("#isComplete").is(":checked")) {
+                    todoItem.isComplete = true;
+                }
+                else {
+                    todoItem.isComplete = false;
+                }
+                $.ajax({
+                    url: url + "/" + todoItem.Id,
+                    dataType: "json",
+                    type: "put",
+                    data: JSON.stringify(todoItem),
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    },
+                    contentType: "application/json",
+                    success: function (response) {
+                        List();
+                        statu = status.SAVE;
+                    },
+                    error: function () { }
+
+
+                })
+                console.log(todoItem);
+            })
+        })</script>
 }
 @section css{
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 }
+
+<!-- DELETE için. Her butonun üzerinde kendine ait o kaydın ID'si bulunması gerekiyor. Bunun için data attribute kullanıyoruz. jquery data attribute-->
